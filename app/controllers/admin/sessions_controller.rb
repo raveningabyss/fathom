@@ -1,5 +1,5 @@
 class Admin::SessionsController < ApplicationController
-  before_action :redirect_if_logged_in
+  before_action :redirect_if_authenticated
 
   def new
   end
@@ -8,6 +8,9 @@ class Admin::SessionsController < ApplicationController
     user = User.find_by(email: params[:identity])
     user ||= User.find_by(username: params[:identity])
     if user&.authenticate(params[:password])
+      # Clear old session to prevent session fixation attack
+      reset_session
+
       session[:user_id] = user.id
       redirect_to admin_root_path
     else
@@ -24,7 +27,7 @@ class Admin::SessionsController < ApplicationController
 
   private
 
-  def redirect_if_logged_in
+  def redirect_if_authenticated
     redirect_to admin_root_path if session[:user_id]
   end
 end

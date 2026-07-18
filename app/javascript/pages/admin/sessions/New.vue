@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { useForm } from '@inertiajs/vue3'
 
-const form = useForm({ identity: '', password: '' })
+const form = useForm<{ identity: string, password: string }>({ identity: '', password: '' })
 
 const submit = () => form.post('/sign_in')
 </script>
