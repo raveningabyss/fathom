@@ -1,5 +1,5 @@
 class Admin::SessionsController < ApplicationController
-  before_action :redirect_if_authenticated
+  before_action :redirect_if_authenticated, except: [:destroy]
 
   def new
   end
@@ -22,7 +22,7 @@ class Admin::SessionsController < ApplicationController
 
   def destroy
     reset_session
-    redirect_to admin_root_path
+    redirect_to admin_sign_in_path
   end
 
   private

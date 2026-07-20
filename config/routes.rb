@@ -10,6 +10,12 @@ Rails.application.routes.draw do
       root 'dashboard#index'
       get 'sign_in', to: 'sessions#new'
       post 'sign_in', to: 'sessions#create'
+      delete 'sign_out', to: 'sessions#destroy'
+
+      get 'posts', to: 'posts#index'
+      get 'media', to: 'media#index'
+      get 'analytics', to: 'analytics#index'
+      get 'settings', to: 'settings#index'
     end
   end
 
