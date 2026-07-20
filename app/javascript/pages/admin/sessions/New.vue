@@ -13,7 +13,7 @@ const submit = () => form.post('/sign_in')
         <div class="w-full max-w-sm">
           <div class="mb-4">
             <h1 class="text-3xl font-bold text-white tracking-tight">Welcome back</h1>
-            <p class="mt-1.5 text-base text-primary-subtle">Sign in to your account to continue</p>
+            <p class="mt-1.5 text-base text-primary-subtle">Good to see you again!</p>
           </div>
 
           <p v-if="form.errors.identity" class="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400 mb-1.5">
@@ -56,7 +56,7 @@ const submit = () => form.post('/sign_in')
         </div>
       </div>
       <div class="hidden md:block w-2/5 shrink-0">
-        <!-- Photo by Francesco Ungaro from Pexels: https://www.pexels.com/photo/brown-coral-reef-in-the-water-11444171/ -->
+        <!-- Photo by Francesco Ungaro from Pexels: https://www.pexels.com/photo/underwater-photo-of-fish-and-coral-reef-17681782/ -->
         <img
           :src="`/images/illustration.jpg`"
           alt="Ocean illustration"
