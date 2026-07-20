@@ -1,3 +1,10 @@
+<script setup lang="ts">
+import AppLayout from '@/AppLayout.vue'
+</script>
+
+
 <template>
-  Dashboard
+  <AppLayout>
+    <p class="text-white">Dashboard</p>
+  </AppLayout>
 </template>

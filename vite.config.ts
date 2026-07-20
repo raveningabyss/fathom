@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import inertia from '@inertiajs/vite'
 import tailwindcss from '@tailwindcss/vite'
@@ -11,6 +12,11 @@ export default defineConfig({
     inertia(),
     vue(),
   ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./app/javascript', import.meta.url)),
+    }
+  },
   server: {
     cors: {
       origin: /^https?:\/\/([a-z0-9-]+\.)?lvh\.me(:\d+)?$/
