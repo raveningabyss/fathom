@@ -4,10 +4,10 @@ import { Link, usePage } from '@inertiajs/vue3'
 import { ChartColumn, FileText, Images, LayoutDashboard, LogOut, Settings } from '@lucide/vue'
 
 const navItems = [
-  { label: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { label: 'Posts', href: '/posts', icon: FileText },
-  { label: 'Media', href: '/media', icon: Images },
-  { label: 'Analytics', href: '/analytics', icon: ChartColumn },
+  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { label: 'Posts', href: '/admin/posts', icon: FileText },
+  { label: 'Media', href: '/admin/media', icon: Images },
+  { label: 'Analytics', href: '/admin/analytics', icon: ChartColumn },
 ]
 
 const page = usePage()
@@ -15,7 +15,7 @@ const username = computed(() => page.props.current_user.username)
 const initials = computed(() => username.value.slice(0, 2).toUpperCase())
 
 const currentPath = computed(() => page.url.split('?')[0])
-const isActive = (href: string) => href === '/' ? currentPath.value === '/' : currentPath.value.startsWith(href)
+const isActive = (href: string) => href === '/admin' ? currentPath.value === '/admin' : currentPath.value.startsWith(href)
 
 const menuOpen = ref(false)
 </script>
@@ -66,7 +66,7 @@ const menuOpen = ref(false)
           class="absolute left-full bottom-0 z-50 ml-2 w-36 overflow-hidden rounded-lg border border-white/[0.08] bg-surface-raised shadow-xl"
         >
           <Link
-            href="/sign_out"
+            href="/admin/sign_out"
             method="delete"
             as="button"
             class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-white/5 cursor-pointer"

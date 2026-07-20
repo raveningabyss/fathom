@@ -3,7 +3,7 @@ import { useForm } from '@inertiajs/vue3'
 
 const form = useForm<{ identity: string, password: string }>({ identity: '', password: '' })
 
-const submit = () => form.post('/sign_in')
+const submit = () => form.post('/admin/sign_in')
 </script>
 
 <template>

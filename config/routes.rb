@@ -6,7 +6,7 @@ Rails.application.routes.draw do
   end
 
   constraints subdomain: 'admin' do
-    scope module: 'admin', as: 'admin' do
+    namespace :admin do
       root 'dashboard#index'
       get 'sign_in', to: 'sessions#new'
       post 'sign_in', to: 'sessions#create'

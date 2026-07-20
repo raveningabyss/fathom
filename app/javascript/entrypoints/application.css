@@ -17,6 +17,11 @@
   --color-primary: #5C8BD6;
   --color-primary-hover: #78A1E2;
   --color-primary-subtle: #8EB2EB;
+
+  /* Success green, same saturation/lightness as primary */
+  --color-success: #52D695;
+  --color-success-hover: #6EDFA6;
+  --color-success-subtle: #8CE6B7;
 }
 
 @layer base {
