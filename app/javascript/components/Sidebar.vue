@@ -39,9 +39,9 @@ const menuOpen = ref(false)
 
     <div class="mt-auto flex flex-col gap-1">
       <Link
-        href="/settings"
+        href="/admin/settings"
         class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
-        :class="isActive('/settings') ? 'bg-primary/15 text-primary' : 'text-white/70 hover:bg-surface-raised hover:text-white'"
+        :class="isActive('/admin/settings') ? 'bg-primary/15 text-primary' : 'text-white/70 hover:bg-surface-raised hover:text-white'"
       >
         <Settings class="h-4 w-4 shrink-0" />
         Settings

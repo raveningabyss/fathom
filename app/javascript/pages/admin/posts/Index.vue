@@ -93,7 +93,7 @@ function titleParts(title: string) {
           <input
             v-model="search"
             type="text"
-            placeholder="Search posts…"
+            placeholder="Search posts..."
             class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-white placeholder-white/30 outline-none focus:border-0 focus:ring-0"
           />
           <button
@@ -106,7 +106,7 @@ function titleParts(title: string) {
           </button>
         </div>
 
-        <Button>New Post</Button>
+        <Button href="/admin/posts/new">New Post</Button>
       </div>
 
       <div class="flex-1 overflow-hidden rounded-xl border border-white/[0.08] bg-surface-raised">
