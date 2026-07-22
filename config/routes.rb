@@ -12,7 +12,7 @@ Rails.application.routes.draw do
       post 'sign_in', to: 'sessions#create'
       delete 'sign_out', to: 'sessions#destroy'
 
-      resources :posts, only: [:index, :new]
+      resources :posts
       get 'media', to: 'media#index'
       get 'analytics', to: 'analytics#index'
       get 'settings', to: 'settings#index'

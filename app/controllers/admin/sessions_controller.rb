@@ -15,8 +15,8 @@ class Admin::SessionsController < ApplicationController
       redirect_to admin_root_path
     else
       render inertia: 'admin/sessions/New',
-             props: { errors: { identity: "Invalid email or password." } },
-             status: :unauthorized
+        props: { errors: { identity: "Invalid email or password." } },
+        status: :unauthorized
     end
   end
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -9,16 +10,19 @@ import {
   type RowSelectionState,
   type SortingState,
 } from '@tanstack/vue-table'
-import { ArrowDown, ArrowUp, ChevronsUpDown, CircleCheck, Inbox, Pencil, Search, SquarePen, Trash2, X } from '@lucide/vue'
+import { ArrowDown, ArrowUp, ChevronsUpDown, Inbox, Search, SquarePen, Trash2, X } from '@lucide/vue'
 import AppLayout from '@/AppLayout.vue'
 import Button from '@/components/Button.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import Toast from '@/components/Toast.vue'
 import type { Post, PostStatus } from '@/types/post'
 
-const posts = ref<Post[]>([])
+const props = defineProps<{ posts: Post[] }>()
+const posts = computed(() => props.posts ?? [])
 
-const statusStyles: Record<PostStatus, { label: string, icon: typeof CircleCheck, class: string }> = {
-  published: { label: 'Published', icon: CircleCheck, class: 'bg-success/10 text-success border-success/20' },
-  draft: { label: 'Draft', icon: Pencil, class: 'bg-white/5 text-white/60 border-white/10' },
+const statusStyles: Record<PostStatus, { label: string, class: string }> = {
+  published: { label: 'Published', class: 'bg-success/10 text-success border-success/20' },
+  draft: { label: 'Draft', class: 'bg-white/5 text-white/60 border-white/10' },
 }
 
 const search = ref('')
@@ -30,7 +34,7 @@ const columnHelper = createColumnHelper<Post>()
 const columns = [
   columnHelper.accessor('title', { header: 'Title' }),
   columnHelper.accessor('status', { header: 'Status' }),
-  columnHelper.accessor('updatedAt', { header: 'Last updated' }),
+  columnHelper.accessor('updated_at', { header: 'Last updated' }),
 ]
 
 const table = useVueTable({
@@ -82,6 +86,28 @@ function titleParts(title: string) {
 
   return parts
 }
+
+const toastMessage = ref<string | null>(null)
+const pendingDeletePost = ref<Post | null>(null)
+
+function requestDelete(post: Post) {
+  pendingDeletePost.value = post
+}
+
+function confirmDelete() {
+  if (!pendingDeletePost.value) return
+  const id = pendingDeletePost.value.id
+  pendingDeletePost.value = null
+
+  router.delete(`/admin/posts/${id}`, {
+    preserveScroll: true,
+    onError: (errors) => {
+      toastMessage.value = Object.entries(errors)
+        .map(([field, message]) => `${field.charAt(0).toUpperCase()}${field.slice(1)} ${message}`)
+        .join(' ')
+    },
+  })
+}
 </script>
 
 <template>
@@ -106,7 +132,7 @@ function titleParts(title: string) {
           </button>
         </div>
 
-        <Button href="/admin/posts/new">New Post</Button>
+        <Button href="/admin/posts" method="post">New Post</Button>
       </div>
 
       <div class="flex-1 overflow-hidden rounded-xl border border-white/[0.08] bg-surface-raised">
@@ -159,18 +185,17 @@ function titleParts(title: string) {
                     class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                     :class="statusStyles[row.original.status].class"
                   >
-                    <component :is="statusStyles[row.original.status].icon" class="h-3.5 w-3.5" />
                     {{ statusStyles[row.original.status].label }}
                   </span>
                 </td>
-                <td class="px-4 py-3.5 whitespace-nowrap text-white/70">{{ formatDate(row.original.updatedAt) }}</td>
+                <td class="px-4 py-3.5 whitespace-nowrap text-white/70">{{ formatDate(row.original.updated_at) }}</td>
                 <td class="px-4 py-3.5">
                   <div class="flex items-center gap-1">
-                    <button type="button" class="text-white/40 transition-colors hover:text-white cursor-pointer">
-                      <SquarePen class="h-4 w-4" />
-                    </button>
-                    <button type="button" class="text-white/40 transition-colors hover:text-red-400 cursor-pointer">
-                      <Trash2 class="h-4 w-4" />
+                    <Link :href="`/admin/posts/${row.original.id}/edit`" class="text-white/40 transition-colors hover:text-white cursor-pointer">
+                      <SquarePen class="h-5 w-5" />
+                    </Link>
+                    <button type="button" class="text-white/40 transition-colors hover:text-red-400 cursor-pointer" @click="requestDelete(row.original)">
+                      <Trash2 class="h-5 w-5" />
                     </button>
                   </div>
                 </td>
@@ -185,5 +210,16 @@ function titleParts(title: string) {
         </div>
       </div>
     </div>
+
+    <Toast :message="toastMessage" @dismissed="toastMessage = null" />
+
+    <ConfirmDialog
+      :open="pendingDeletePost !== null"
+      :title="`Delete “${pendingDeletePost?.title || 'Untitled'}”?`"
+      message="This can't be undone."
+      confirm-label="Delete"
+      @confirm="confirmDelete"
+      @cancel="pendingDeletePost = null"
+    />
   </AppLayout>
 </template>
