@@ -178,7 +178,7 @@ function confirmDelete() {
                   />
                 </td>
                 <td class="px-4 py-3.5 text-white/90">
-                  <span v-for="(part, i) in titleParts(row.original.title)" :key="i" :class="part.match ? 'text-primary' : ''">{{ part.text }}</span>
+                  <span v-for="(part, i) in titleParts(row.original.title || 'Untitled')" :key="i" :class="part.match ? 'text-primary' : ''">{{ part.text }}</span>
                 </td>
                 <td class="px-4 py-3.5">
                   <span

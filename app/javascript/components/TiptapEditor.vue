@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { TableKit } from '@tiptap/extension-table'
@@ -63,7 +64,13 @@ const editor = useEditor({
     ImageFigure,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
   ],
-  onUpdate: ({ editor }) => {
+  onUpdate: ({ editor, transaction }) => {
+    const before = collectImageFigureIds(transaction.before)
+    const after = collectImageFigureIds(transaction.doc)
+    for (const id of before) {
+      if (!after.has(id)) deleteMedia(id)
+    }
+
     // getHTML() serializes the whole doc (including any embedded base64 images) —
     // doing that on every keystroke is what was causing the typing lag.
     clearTimeout(contentSyncTimeout)
@@ -198,25 +205,83 @@ function openImageMenu() {
   imageMenuOpen.value = true
 }
 
-function applyImageUrl() {
-  if (!editor.value || !imageUrl.value) return
-  editor.value.chain().focus().setImageFigure({ src: imageUrl.value }).run()
-  imageMenuOpen.value = false
+function csrfHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+    'Accept': 'application/json',
+  }
 }
 
-function onImageFileChange(event: Event) {
+function collectImageFigureIds(doc: ProseMirrorNode) {
+  const ids = new Set<string>()
+  doc.descendants((node) => {
+    if (node.type.name === 'imageFigure' && node.attrs.id) ids.add(String(node.attrs.id))
+  })
+  return ids
+}
+
+async function deleteMedia(id: string) {
+  await fetch(`/admin/media/${id}`, { method: 'DELETE', headers: csrfHeaders() })
+}
+
+function setImageFigureAttrsById(id: string, attrs: Record<string, unknown>) {
+  const e = editor.value
+  if (!e) return
+
+  e.state.doc.descendants((node, pos) => {
+    if (node.type.name === 'imageFigure' && String(node.attrs.id) === id) {
+      e.view.dispatch(e.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...attrs }))
+      return false
+    }
+  })
+}
+
+async function uploadFile(file: File) {
+  if (!editor.value) return
+
+  const objectUrl = URL.createObjectURL(file)
+  const response = await fetch('/admin/media', { method: 'POST', headers: csrfHeaders() })
+  const { id, presigned_url } = await response.json()
+
+  editor.value.chain().focus().setImageFigure({ src: objectUrl, id: String(id) }).run()
+
+  const uploadResponse = await fetch(presigned_url, {
+    method: 'PUT',
+    body: file,
+    headers: { 'Content-Type': file.type },
+  })
+  if (!uploadResponse.ok) return
+
+  const confirmResponse = await fetch(`/admin/media/${id}/mark_as_uploaded`, {
+    method: 'PATCH',
+    headers: csrfHeaders(),
+  })
+  if (!confirmResponse.ok) return
+
+  const { public_url } = await confirmResponse.json()
+  setImageFigureAttrsById(String(id), { src: public_url })
+  URL.revokeObjectURL(objectUrl)
+}
+
+async function applyImageUrl() {
+  if (!imageUrl.value) return
+  imageMenuOpen.value = false
+
+  const sourceResponse = await fetch(imageUrl.value)
+  const blob = await sourceResponse.blob()
+  const filename = imageUrl.value.split('/').pop()?.split('?')[0] || 'image'
+  await uploadFile(new File([blob], filename, { type: blob.type }))
+}
+
+async function onImageFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (!file || !editor.value) return
-
-  const reader = new FileReader()
-  reader.onload = () => {
-    editor.value?.chain().focus().setImageFigure({ src: reader.result as string }).run()
-  }
-  reader.readAsDataURL(file)
+  if (!file) return
 
   input.value = ''
   imageMenuOpen.value = false
+  await uploadFile(file)
 }
 
 const tableMenuOpen = ref(false)

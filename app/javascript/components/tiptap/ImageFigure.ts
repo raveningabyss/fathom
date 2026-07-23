@@ -5,6 +5,7 @@ import ImageFigureView from './ImageFigureView.vue'
 export type ImageFigureAlign = 'left' | 'center' | 'right'
 
 export type ImageFigureAttrs = {
+  id: string
   src: string
   alt?: string | null
   width?: number | null
@@ -29,6 +30,11 @@ export const ImageFigure = Node.create({
 
   addAttributes() {
     return {
+      id: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-media-id'),
+        renderHTML: attrs => attrs.id ? { 'data-media-id': attrs.id } : {},
+      },
       src: { default: null },
       alt: { default: null },
       width: { default: null },

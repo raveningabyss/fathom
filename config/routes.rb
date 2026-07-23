@@ -13,7 +13,9 @@ Rails.application.routes.draw do
       delete 'sign_out', to: 'sessions#destroy'
 
       resources :posts
-      get 'media', to: 'media#index'
+      resources :media, only: [:index, :create, :destroy] do
+        patch 'mark_as_uploaded'
+      end
       get 'analytics', to: 'analytics#index'
       get 'settings', to: 'settings#index'
     end
