@@ -46,6 +46,7 @@ import {
   Upload,
 } from '@lucide/vue'
 import Button from '@/components/Button.vue'
+import { confirmMediaUploaded, createMedia, deleteMedia, uploadToPresignedUrl } from '@/composables/useMediaUpload'
 
 const content = defineModel<string>({ default: '' })
 
@@ -205,24 +206,12 @@ function openImageMenu() {
   imageMenuOpen.value = true
 }
 
-function csrfHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-    'Accept': 'application/json',
-  }
-}
-
 function collectImageFigureIds(doc: ProseMirrorNode) {
   const ids = new Set<string>()
   doc.descendants((node) => {
     if (node.type.name === 'imageFigure' && node.attrs.id) ids.add(String(node.attrs.id))
   })
   return ids
-}
-
-async function deleteMedia(id: string) {
-  await fetch(`/admin/media/${id}`, { method: 'DELETE', headers: csrfHeaders() })
 }
 
 function setImageFigureAttrsById(id: string, attrs: Record<string, unknown>) {
@@ -241,26 +230,13 @@ async function uploadFile(file: File) {
   if (!editor.value) return
 
   const objectUrl = URL.createObjectURL(file)
-  const response = await fetch('/admin/media', { method: 'POST', headers: csrfHeaders() })
-  const { id, presigned_url } = await response.json()
+  const { id, presignedUrl } = await createMedia()
 
   editor.value.chain().focus().setImageFigure({ src: objectUrl, id: String(id) }).run()
 
-  const uploadResponse = await fetch(presigned_url, {
-    method: 'PUT',
-    body: file,
-    headers: { 'Content-Type': file.type },
-  })
-  if (!uploadResponse.ok) return
-
-  const confirmResponse = await fetch(`/admin/media/${id}/mark_as_uploaded`, {
-    method: 'PATCH',
-    headers: csrfHeaders(),
-  })
-  if (!confirmResponse.ok) return
-
-  const { public_url } = await confirmResponse.json()
-  setImageFigureAttrsById(String(id), { src: public_url })
+  await uploadToPresignedUrl(presignedUrl, file)
+  const publicUrl = await confirmMediaUploaded(id)
+  setImageFigureAttrsById(String(id), { src: publicUrl })
   URL.revokeObjectURL(objectUrl)
 }
 

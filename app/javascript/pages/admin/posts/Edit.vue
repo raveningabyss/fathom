@@ -9,6 +9,7 @@ import CategorySelector from '@/components/CategorySelector.vue'
 import FormField from '@/components/FormField.vue'
 import TiptapEditor from '@/components/TiptapEditor.vue'
 import Toast from '@/components/Toast.vue'
+import { deleteMedia, uploadMedia } from '@/composables/useMediaUpload'
 import type { Post } from '@/types/post'
 
 const props = defineProps<{ post: Post }>()
@@ -17,27 +18,48 @@ const form = useForm<{
   title: string,
   content: string,
   slug: string,
-  excerpt: string
+  excerpt: string,
+  cover_image_url: string
 }>({
   title: props.post.title ?? '',
   content: props.post.content ?? '',
   slug: props.post.slug ?? '',
-  excerpt: props.post.excerpt ?? ''
+  excerpt: props.post.excerpt ?? '',
+  cover_image_url: props.post.cover_image_url ?? ''
 })
 
 const selectedCategories = ref<string[]>([])
 
 const coverImageInput = ref<HTMLInputElement>()
-const coverImagePreview = ref<string | null>(null)
+const coverImagePreview = ref<string | null>(props.post.cover_image_url)
+const coverMediumId = ref<number | null>(null)
 const isDraggingCover = ref(false)
+const isUploadingCover = ref(false)
 
-function setCoverImage(file: File | null | undefined) {
+async function setCoverImage(file: File | null | undefined) {
   if (!file) return
-  coverImagePreview.value = URL.createObjectURL(file)
+
+  if (coverMediumId.value) await deleteMedia(coverMediumId.value)
+
+  const objectUrl = URL.createObjectURL(file)
+  coverImagePreview.value = objectUrl
+  isUploadingCover.value = true
+
+  try {
+    const { id, publicUrl } = await uploadMedia(file)
+    coverMediumId.value = id
+    coverImagePreview.value = publicUrl
+    form.cover_image_url = publicUrl
+    URL.revokeObjectURL(objectUrl)
+  } finally {
+    isUploadingCover.value = false
+  }
 }
 
 function onCoverFileChange(event: Event) {
-  setCoverImage((event.target as HTMLInputElement).files?.[0])
+  const input = event.target as HTMLInputElement
+  setCoverImage(input.files?.[0])
+  input.value = ''
 }
 
 function onCoverDrop(event: DragEvent) {
@@ -45,8 +67,12 @@ function onCoverDrop(event: DragEvent) {
   setCoverImage(event.dataTransfer?.files?.[0])
 }
 
-function removeCoverImage() {
+async function removeCoverImage() {
+  if (coverMediumId.value) await deleteMedia(coverMediumId.value)
+
+  coverMediumId.value = null
   coverImagePreview.value = null
+  form.cover_image_url = ''
   if (coverImageInput.value) coverImageInput.value.value = ''
 }
 
@@ -163,8 +189,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               @drop.prevent="onCoverDrop"
             >
               <template v-if="coverImagePreview">
-                <img :src="coverImagePreview" alt="Cover image preview" class="max-h-40 rounded-md object-cover" />
-                <button type="button" class="text-xs font-medium text-red-400 transition-colors hover:text-red-300 cursor-pointer" @click="removeCoverImage">
+                <img :src="coverImagePreview" alt="Cover image preview" class="max-h-40 rounded-md object-cover" :class="isUploadingCover ? 'opacity-50' : ''" />
+                <span v-if="isUploadingCover" class="flex items-center gap-1.5 text-xs text-white/50">
+                  <LoaderCircle class="h-3.5 w-3.5 animate-spin" />
+                  Uploading...
+                </span>
+                <button v-else type="button" class="text-xs font-medium text-red-400 transition-colors hover:text-red-300 cursor-pointer" @click="removeCoverImage">
                   Remove image
                 </button>
               </template>

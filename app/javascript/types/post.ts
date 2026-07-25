@@ -7,6 +7,7 @@ export type Post = {
   slug: string
   excerpt: string
   content: string
+  cover_image_url: string
   status: PostStatus
   created_at: string
   updated_at: string

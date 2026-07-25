@@ -45,9 +45,11 @@ class Admin::PostsController < Admin::BaseController
   def attach_referenced_media
     ids = @post.content.to_s.scan(/data-media-id="(\d+)"/).flatten
     Medium.where(id: ids).update_all(expires_at: nil) if ids.any?
+
+    Medium.where(media_url: @post.cover_image_url).update_all(expires_at: nil) if @post.cover_image_url.present?
   end
 
   def post_params
-    params.require(:post).permit(:title, :slug, :excerpt, :content)
+    params.require(:post).permit(:title, :slug, :excerpt, :content, :cover_image_url)
   end
 end
