@@ -43,8 +43,13 @@ class Admin::PostsController < Admin::BaseController
   end
 
   def attach_referenced_media
-    ids = @post.content.to_s.scan(/data-media-id="(\d+)"/).flatten
-    Medium.where(id: ids).update_all(expires_at: nil) if ids.any?
+    Nokogiri::HTML::DocumentFragment.parse(@post.content.to_s).css('figure[data-media-id]').each do |figure|
+      link = @post.post_media.find_or_initialize_by(medium_id: figure['data-media-id'])
+      next unless link.medium
+
+      link.update!(caption: figure.at_css('figcaption')&.text.to_s.strip)
+      link.medium.update!(expires_at: nil)
+    end
 
     Medium.where(media_url: @post.cover_image_url).update_all(expires_at: nil) if @post.cover_image_url.present?
   end

@@ -12,7 +12,11 @@ Rails.application.routes.draw do
       post 'sign_in', to: 'sessions#create'
       delete 'sign_out', to: 'sessions#destroy'
 
-      resources :posts
+      resources :posts do
+        resources :media, only: [], controller: 'media' do
+          delete 'unlink', on: :member
+        end
+      end
       resources :media, only: [:index, :create, :destroy] do
         patch 'mark_as_uploaded'
       end

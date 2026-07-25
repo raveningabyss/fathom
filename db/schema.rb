@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_25_161200) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_25_165253) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,6 +22,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_161200) do
     t.uuid "public_id"
     t.string "status"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "post_media", force: :cascade do |t|
+    t.string "caption"
+    t.datetime "created_at", null: false
+    t.bigint "medium_id", null: false
+    t.bigint "post_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["medium_id"], name: "index_post_media_on_medium_id"
+    t.index ["post_id"], name: "index_post_media_on_post_id"
   end
 
   create_table "posts", force: :cascade do |t|
@@ -45,5 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_161200) do
     t.string "username"
   end
 
+  add_foreign_key "post_media", "media"
+  add_foreign_key "post_media", "posts"
   add_foreign_key "posts", "users"
 end
