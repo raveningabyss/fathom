@@ -6,8 +6,14 @@ export function csrfHeaders() {
   }
 }
 
-export async function deleteMedia(id: string | number) {
-  await fetch(`/admin/media/${id}`, { method: 'DELETE', headers: csrfHeaders() })
+export async function deleteMedia(id: string | number, postId?: string | number) {
+  const url = postId ? `/admin/media/${id}?post_id=${postId}` : `/admin/media/${id}`
+  await fetch(url, { method: 'DELETE', headers: csrfHeaders() })
+}
+
+export async function unlinkMedia(postId: string | number, mediumId: string | number) {
+  const response = await fetch(`/admin/posts/${postId}/media/${mediumId}/unlink`, { method: 'DELETE', headers: csrfHeaders() })
+  return response.ok
 }
 
 export async function createMedia() {

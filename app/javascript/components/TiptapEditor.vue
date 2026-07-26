@@ -27,6 +27,7 @@ import {
   Heading2,
   Heading3,
   Image as ImageIcon,
+  Images,
   Italic,
   Link2,
   List,
@@ -46,14 +47,18 @@ import {
   Upload,
 } from '@lucide/vue'
 import Button from '@/components/Button.vue'
-import { confirmMediaUploaded, createMedia, deleteMedia, uploadToPresignedUrl } from '@/composables/useMediaUpload'
+import MediaLibraryPicker from '@/components/MediaLibraryPicker.vue'
+import { confirmMediaUploaded, createMedia, deleteMedia, unlinkMedia, uploadToPresignedUrl } from '@/composables/useMediaUpload'
+import type { Medium } from '@/types/medium'
 
+const props = defineProps<{ postId: number }>()
 const content = defineModel<string>({ default: '' })
 
 const openLinkModifier = navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'
 const lowlight = createLowlight(common)
 
 let contentSyncTimeout: ReturnType<typeof setTimeout> | undefined
+const libraryPickedIds = new Set<string>()
 
 const editor = useEditor({
   content: content.value,
@@ -69,7 +74,13 @@ const editor = useEditor({
     const before = collectImageFigureIds(transaction.before)
     const after = collectImageFigureIds(transaction.doc)
     for (const id of before) {
-      if (!after.has(id)) deleteMedia(id)
+      if (after.has(id)) continue
+
+      if (libraryPickedIds.has(id)) {
+        unlinkMedia(props.postId, id)
+      } else {
+        deleteMedia(id, props.postId)
+      }
     }
 
     // getHTML() serializes the whole doc (including any embedded base64 images) —
@@ -260,6 +271,19 @@ async function onImageFileChange(event: Event) {
   await uploadFile(file)
 }
 
+const libraryPickerOpen = ref(false)
+
+function openLibraryPicker() {
+  imageMenuOpen.value = false
+  libraryPickerOpen.value = true
+}
+
+function onLibraryPick(medium: Medium) {
+  libraryPickerOpen.value = false
+  libraryPickedIds.add(String(medium.id))
+  editor.value?.chain().focus().setImageFigure({ src: medium.media_url, id: String(medium.id) }).run()
+}
+
 const tableMenuOpen = ref(false)
 
 const tableActions = computed(() => {
@@ -392,6 +416,15 @@ function runTableAction(action: { disabled: boolean, run: () => void }) {
             Upload from device
           </button>
           <input ref="imageFileInput" type="file" accept="image/*" class="hidden" @change="onImageFileChange" />
+
+          <button
+            type="button"
+            class="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-white/15 px-2 py-1.5 text-xs text-white/60 transition-colors hover:border-primary/40 hover:text-white cursor-pointer"
+            @click="openLibraryPicker"
+          >
+            <Images class="h-3.5 w-3.5" />
+            Pick from library
+          </button>
         </div>
       </div>
 
@@ -482,6 +515,12 @@ function runTableAction(action: { disabled: boolean, run: () => void }) {
         <p class="mt-0.5 text-white/40">{{ openLinkModifier }}+Click to open</p>
       </div>
     </Teleport>
+
+    <MediaLibraryPicker
+      :open="libraryPickerOpen"
+      @select="onLibraryPick"
+      @cancel="libraryPickerOpen = false"
+    />
   </div>
 </template>
 

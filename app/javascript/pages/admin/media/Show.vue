@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import { Eye, Unlink } from '@lucide/vue'
+import { Check, Eye, Unlink } from '@lucide/vue'
 import AppLayout from '@/AppLayout.vue'
 import Button from '@/components/Button.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import FormField from '@/components/FormField.vue'
 import Toast from '@/components/Toast.vue'
-import { csrfHeaders } from '@/composables/useMediaUpload'
+import { csrfHeaders, unlinkMedia } from '@/composables/useMediaUpload'
 import type { Medium, MediumPostUsage } from '@/types/medium'
 
 const props = defineProps<{ medium: Medium, post_media: MediumPostUsage[] }>()
@@ -34,8 +34,8 @@ async function confirmUnlink() {
   const usage = pendingUnlink.value
   pendingUnlink.value = null
 
-  const response = await fetch(`/admin/posts/${usage.post_id}/media/${props.medium.id}/unlink`, { method: 'DELETE', headers: csrfHeaders() })
-  if (response.ok) {
+  const ok = await unlinkMedia(usage.post_id, props.medium.id)
+  if (ok) {
     postMedia.value = postMedia.value.filter(pm => pm.post_id !== usage.post_id)
     toastMessage.value = `Unlinked from “${usage.title || 'Untitled'}”.`
   } else {
@@ -71,15 +71,20 @@ async function confirmUnlink() {
               <table v-if="postMedia.length" class="w-full text-left text-sm">
                 <thead>
                   <tr class="border-b border-white/[0.08]">
-                    <th class="px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white/40">Title</th>
-                    <th class="px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white/40">Caption</th>
+                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white/40">Title</th>
+                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white/40">Caption</th>
+                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white/40">Cover Image</th>
                     <th class="w-16 px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-white/[0.06]">
                   <tr v-for="usage in postMedia" :key="usage.post_id" class="transition-colors hover:bg-white/[0.03]">
                     <td class="px-4 py-3.5 font-medium text-white">{{ usage.title || 'Untitled' }}</td>
-                    <td class="px-4 py-3.5 text-white/70">{{ usage.caption || '—' }}</td>
+                    <td class="px-4 py-3.5 text-white/70">{{ usage.caption || 'Not available' }}</td>
+                    <td class="px-4 py-3.5">
+                      <Check v-if="usage.cover_image" class="h-4 w-4 text-primary" />
+                      <span v-else class="text-white/30">—</span>
+                    </td>
                     <td class="px-4 py-3.5">
                       <div class="flex items-center gap-1">
                         <Link :href="`/admin/posts/${usage.post_id}/edit`" title="View" class="text-white/40 transition-colors hover:text-white cursor-pointer">

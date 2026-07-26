@@ -8,4 +8,5 @@ export type MediumPostUsage = {
   post_id: number
   title: string
   caption: string | null
+  cover_image: boolean
 }

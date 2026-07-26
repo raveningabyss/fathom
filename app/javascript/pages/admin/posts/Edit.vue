@@ -39,7 +39,7 @@ const isUploadingCover = ref(false)
 async function setCoverImage(file: File | null | undefined) {
   if (!file) return
 
-  if (coverMediumId.value) await deleteMedia(coverMediumId.value)
+  if (coverMediumId.value) await deleteMedia(coverMediumId.value, props.post.id)
 
   const objectUrl = URL.createObjectURL(file)
   coverImagePreview.value = objectUrl
@@ -68,7 +68,7 @@ function onCoverDrop(event: DragEvent) {
 }
 
 async function removeCoverImage() {
-  if (coverMediumId.value) await deleteMedia(coverMediumId.value)
+  if (coverMediumId.value) await deleteMedia(coverMediumId.value, props.post.id)
 
   coverMediumId.value = null
   coverImagePreview.value = null
@@ -163,7 +163,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           </FormField>
 
           <FormField label="Content" class="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <TiptapEditor v-model="form.content" />
+            <TiptapEditor v-model="form.content" :post-id="props.post.id" />
           </FormField>
         </div>
 

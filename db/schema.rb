@@ -10,12 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_25_172144) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_26_030602) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "media", force: :cascade do |t|
-    t.string "caption"
     t.datetime "created_at", null: false
     t.datetime "expires_at"
     t.string "media_url"
@@ -28,6 +27,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_172144) do
 
   create_table "post_media", force: :cascade do |t|
     t.string "caption"
+    t.boolean "cover_image", default: false, null: false
     t.datetime "created_at", null: false
     t.bigint "medium_id", null: false
     t.bigint "post_id", null: false

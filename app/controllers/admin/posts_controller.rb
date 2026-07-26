@@ -52,7 +52,16 @@ class Admin::PostsController < Admin::BaseController
       link.medium.update!(expires_at: nil)
     end
 
-    Medium.where(media_url: @post.cover_image_url).update_all(expires_at: nil) if @post.cover_image_url.present?
+    cover_medium = Medium.find_by(media_url: @post.cover_image_url) if @post.cover_image_url.present?
+
+    if cover_medium
+      @post.post_media.where.not(medium_id: cover_medium.id).update_all(cover_image: false)
+      link = @post.post_media.find_or_initialize_by(medium_id: cover_medium.id)
+      link.update!(cover_image: true)
+      cover_medium.update!(expires_at: nil)
+    else
+      @post.post_media.update_all(cover_image: false)
+    end
   end
 
   def post_params

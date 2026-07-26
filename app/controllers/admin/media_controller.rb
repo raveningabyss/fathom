@@ -1,8 +1,11 @@
 class Admin::MediaController < Admin::BaseController
   def index
-    render inertia: 'admin/media/Index', props: {
-      media: current_user_media.order(created_at: :desc).as_json(only: [:id, :media_url, :created_at])
-    }
+    media = current_user_media.order(created_at: :desc).as_json(only: [:id, :media_url, :created_at])
+
+    respond_to do |format|
+      format.html { render inertia: 'admin/media/Index', props: { media: media } }
+      format.json { render json: { media: media } }
+    end
   end
 
   def show
@@ -14,7 +17,8 @@ class Admin::MediaController < Admin::BaseController
         {
           post_id: post_medium.post.id,
           title: post_medium.post.title,
-          caption: post_medium.caption
+          caption: post_medium.caption,
+          cover_image: post_medium.cover_image
         }
       }
     }
@@ -32,6 +36,8 @@ class Admin::MediaController < Admin::BaseController
 
   def destroy
     medium = Medium.find(params[:id])
+    medium.post_media.where(post_id: params[:post_id]).destroy_all if params[:post_id]
+
     if medium.destroy
       backblaze_client.delete_object(key: medium.key)
       flash[:notice] = 'Media destroyed.'
