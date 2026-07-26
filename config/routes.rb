@@ -6,6 +6,8 @@ Rails.application.routes.draw do
   end
 
   constraints subdomain: 'admin' do
+    get '/', to: redirect('/admin')
+
     namespace :admin do
       root 'dashboard#index'
       get 'sign_in', to: 'sessions#new'
