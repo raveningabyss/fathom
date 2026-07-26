@@ -8,6 +8,8 @@ export type Post = {
   excerpt: string
   content: string
   cover_image_url: string
+  category_id: number | null
+  tag_ids?: number[]
   status: PostStatus
   created_at: string
   updated_at: string

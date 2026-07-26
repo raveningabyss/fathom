@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
-import { ChartColumn, FileText, Images, LayoutDashboard, LogOut, Settings } from '@lucide/vue'
+import { ChartColumn, FileText, Images, LayoutDashboard, LogOut, Settings, Shapes, Tags } from '@lucide/vue'
 
 const navItems = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Posts', href: '/admin/posts', icon: FileText },
   { label: 'Media', href: '/admin/media', icon: Images },
+  { label: 'Categories', href: '/admin/categories', icon: Shapes },
+  { label: 'Tags', href: '/admin/tags', icon: Tags },
   { label: 'Analytics', href: '/admin/analytics', icon: ChartColumn },
 ]
 

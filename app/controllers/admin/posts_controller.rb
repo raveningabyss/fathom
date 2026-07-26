@@ -1,4 +1,8 @@
 class Admin::PostsController < Admin::BaseController
+  # tag_ids is a virtual attribute (has_many :through), not a real column, so
+  # Rails' automatic param wrapping skips it unless explicitly included here.
+  wrap_parameters :post, include: Post.attribute_names + ['tag_ids']
+
   before_action :set_current_post, only: [:edit, :update, :destroy]
 
   def create
@@ -12,7 +16,11 @@ class Admin::PostsController < Admin::BaseController
   end
 
   def edit
-    render inertia: 'admin/posts/Edit', props: { post: @post.as_json }
+    render inertia: 'admin/posts/Edit', props: {
+      post: @post.as_json(methods: [:tag_ids]),
+      categories: Category.order(:name).as_json(only: [:id, :name]),
+      tags: Tag.order(:name).as_json(only: [:id, :name])
+    }
   end
 
   def update
@@ -21,7 +29,12 @@ class Admin::PostsController < Admin::BaseController
       redirect_to edit_admin_post_path(@post)
     else
       render inertia: 'admin/posts/Edit',
-        props: { post: @post.as_json, errors: @post.errors.to_hash.transform_values(&:first) },
+        props: {
+          post: @post.as_json(methods: [:tag_ids]),
+          categories: Category.order(:name).as_json(only: [:id, :name]),
+          tags: Tag.order(:name).as_json(only: [:id, :name]),
+          errors: @post.errors.to_hash.transform_values(&:first)
+        },
         status: :unprocessable_content
     end
   end
@@ -65,6 +78,6 @@ class Admin::PostsController < Admin::BaseController
   end
 
   def post_params
-    params.require(:post).permit(:title, :slug, :excerpt, :content, :cover_image_url)
+    params.require(:post).permit(:title, :slug, :excerpt, :content, :cover_image_url, :category_id, tag_ids: [])
   end
 end

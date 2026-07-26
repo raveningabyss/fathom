@@ -2,26 +2,26 @@
 import { computed, ref } from 'vue'
 import { ChevronDown, Plus, X } from '@lucide/vue'
 import { csrfHeaders } from '@/composables/useMediaUpload'
-import type { Category } from '@/types/category'
+import type { Tag } from '@/types/tag'
 
-const props = defineProps<{ options: Category[] }>()
-const selected = defineModel<number | null>({ default: null })
+const props = defineProps<{ options: Tag[] }>()
+const selected = defineModel<number[]>({ default: () => [] })
 
-const categories = ref<Category[]>([...props.options])
+const tags = ref<Tag[]>([...props.options])
 const menuOpen = ref(false)
 const search = ref('')
 const isCreating = ref(false)
 const errorMessage = ref<string | null>(null)
 
-const selectedCategory = computed(() => categories.value.find(c => c.id === selected.value) ?? null)
+const selectedTags = computed(() => tags.value.filter(t => selected.value.includes(t.id)))
 
-const filteredCategories = computed(() => {
+const filteredTags = computed(() => {
   const query = search.value.trim().toLowerCase()
-  return categories.value.filter(c => c.id !== selected.value && (!query || c.name.toLowerCase().includes(query)))
+  return tags.value.filter(t => !selected.value.includes(t.id) && (!query || t.name.toLowerCase().includes(query)))
 })
 
 const hasExactMatch = computed(() =>
-  categories.value.some(c => c.name.toLowerCase() === search.value.trim().toLowerCase())
+  tags.value.some(t => t.name.toLowerCase() === search.value.trim().toLowerCase())
 )
 
 const showCreateOption = computed(() => search.value.trim().length > 0 && !hasExactMatch.value)
@@ -37,16 +37,16 @@ function toggleMenu() {
   menuOpen.value = true
 }
 
-function selectCategory(category: Category) {
-  selected.value = category.id
+function addTag(tag: Tag) {
+  selected.value = [...selected.value, tag.id]
   menuOpen.value = false
 }
 
-function clearCategory() {
-  selected.value = null
+function removeTag(tagId: number) {
+  selected.value = selected.value.filter(id => id !== tagId)
 }
 
-async function createCategory() {
+async function createTag() {
   const name = search.value.trim()
   if (!name || isCreating.value) return
 
@@ -54,21 +54,21 @@ async function createCategory() {
   errorMessage.value = null
 
   try {
-    const response = await fetch('/admin/categories', {
+    const response = await fetch('/admin/tags', {
       method: 'POST',
       headers: csrfHeaders(),
-      body: JSON.stringify({ category: { name } }),
+      body: JSON.stringify({ tag: { name } }),
     })
 
     if (!response.ok) {
       const data = await response.json()
-      errorMessage.value = data.errors?.join(', ') || 'Failed to create category.'
+      errorMessage.value = data.errors?.join(', ') || 'Failed to create tag.'
       return
     }
 
-    const category = await response.json()
-    categories.value = [...categories.value, category]
-    selected.value = category.id
+    const tag = await response.json()
+    tags.value = [...tags.value, tag]
+    selected.value = [...selected.value, tag.id]
     menuOpen.value = false
   } finally {
     isCreating.value = false
@@ -78,17 +78,22 @@ async function createCategory() {
 
 <template>
   <div
-    class="relative flex items-center gap-2 rounded-lg border border-white/[0.08] bg-surface-raised px-3 py-2 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 cursor-pointer"
+    class="relative flex flex-wrap items-center gap-1.5 rounded-lg border border-white/[0.08] bg-surface-raised px-3 py-2 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 cursor-pointer"
     @click="toggleMenu"
   >
-    <span v-if="!selectedCategory" class="flex-1 text-sm text-white/30">Select a category your blog belongs to</span>
-    <span v-else class="flex-1 text-sm text-white">{{ selectedCategory.name }}</span>
+    <span v-if="!selectedTags.length" class="text-sm text-white/30">Add tags to this post</span>
+    <span
+      v-for="tag in selectedTags"
+      :key="tag.id"
+      class="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+    >
+      {{ tag.name }}
+      <button type="button" class="cursor-pointer hover:text-white" @click.stop="removeTag(tag.id)">
+        <X class="h-3 w-3" />
+      </button>
+    </span>
 
-    <button v-if="selectedCategory" type="button" class="shrink-0 text-white/40 transition-colors hover:text-white cursor-pointer" @click.stop="clearCategory">
-      <X class="h-3.5 w-3.5" />
-    </button>
-
-    <ChevronDown class="h-4 w-4 shrink-0 text-white/40" />
+    <ChevronDown class="ml-auto h-4 w-4 shrink-0 text-white/40" />
 
     <div v-if="menuOpen" class="fixed inset-0 z-40" @click.stop="menuOpen = false" />
 
@@ -100,20 +105,20 @@ async function createCategory() {
       <input
         v-model="search"
         type="text"
-        placeholder="Search or create a category..."
+        placeholder="Search or create a tag..."
         class="w-full border-0 border-b border-white/[0.08] bg-transparent px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:ring-0"
-        @keydown.enter="showCreateOption ? createCategory() : filteredCategories[0] && selectCategory(filteredCategories[0])"
+        @keydown.enter="showCreateOption ? createTag() : filteredTags[0] && addTag(filteredTags[0])"
       />
 
       <div class="max-h-52 overflow-y-auto">
         <button
-          v-for="category in filteredCategories"
-          :key="category.id"
+          v-for="tag in filteredTags"
+          :key="tag.id"
           type="button"
           class="block w-full px-3 py-2 text-left text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
-          @click="selectCategory(category)"
+          @click="addTag(tag)"
         >
-          {{ category.name }}
+          {{ tag.name }}
         </button>
 
         <button
@@ -121,13 +126,13 @@ async function createCategory() {
           type="button"
           class="flex w-full items-center gap-1.5 px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-white/5 cursor-pointer disabled:opacity-50"
           :disabled="isCreating"
-          @click="createCategory"
+          @click="createTag"
         >
           <Plus class="h-3.5 w-3.5 shrink-0" />
           Create “{{ search.trim() }}”
         </button>
 
-        <p v-if="!filteredCategories.length && !showCreateOption" class="px-3 py-2 text-sm text-white/40">No categories</p>
+        <p v-if="!filteredTags.length && !showCreateOption" class="px-3 py-2 text-sm text-white/40">No more tags</p>
       </div>
 
       <p v-if="errorMessage" class="border-t border-white/[0.08] px-3 py-2 text-xs text-red-400">{{ errorMessage }}</p>

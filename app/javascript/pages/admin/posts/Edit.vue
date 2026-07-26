@@ -7,28 +7,33 @@ import AppLayout from '@/AppLayout.vue'
 import Button from '@/components/Button.vue'
 import CategorySelector from '@/components/CategorySelector.vue'
 import FormField from '@/components/FormField.vue'
+import TagSelector from '@/components/TagSelector.vue'
 import TiptapEditor from '@/components/TiptapEditor.vue'
 import Toast from '@/components/Toast.vue'
 import { deleteMedia, uploadMedia } from '@/composables/useMediaUpload'
+import type { Category } from '@/types/category'
 import type { Post } from '@/types/post'
+import type { Tag } from '@/types/tag'
 
-const props = defineProps<{ post: Post }>()
+const props = defineProps<{ post: Post, categories: Category[], tags: Tag[] }>()
 
 const form = useForm<{
   title: string,
   content: string,
   slug: string,
   excerpt: string,
-  cover_image_url: string
+  cover_image_url: string,
+  category_id: number | null,
+  tag_ids: number[]
 }>({
   title: props.post.title ?? '',
   content: props.post.content ?? '',
   slug: props.post.slug ?? '',
   excerpt: props.post.excerpt ?? '',
-  cover_image_url: props.post.cover_image_url ?? ''
+  cover_image_url: props.post.cover_image_url ?? '',
+  category_id: props.post.category_id,
+  tag_ids: props.post.tag_ids ?? []
 })
-
-const selectedCategories = ref<string[]>([])
 
 const coverImageInput = ref<HTMLInputElement>()
 const coverImagePreview = ref<string | null>(props.post.cover_image_url)
@@ -177,7 +182,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           </FormField>
 
           <FormField label="Category">
-            <CategorySelector v-model="selectedCategories" />
+            <CategorySelector v-model="form.category_id" :options="props.categories" />
+          </FormField>
+
+          <FormField label="Tags">
+            <TagSelector v-model="form.tag_ids" :options="props.tags" />
           </FormField>
 
           <FormField label="Cover Image">

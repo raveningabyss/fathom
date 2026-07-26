@@ -1,19 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import {
-  createColumnHelper,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useVueTable,
-  type RowSelectionState,
-  type SortingState,
-} from '@tanstack/vue-table'
-import { ArrowDown, ArrowUp, ChevronsUpDown, Inbox, Search, SquarePen, Trash2, X } from '@lucide/vue'
+import { Search, SquarePen, Trash2, X } from '@lucide/vue'
 import AppLayout from '@/AppLayout.vue'
 import Button from '@/components/Button.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DataTable, { type DataTableColumn } from '@/components/DataTable.vue'
 import Toast from '@/components/Toast.vue'
 import { useFlashToast } from '@/composables/useFlashToast'
 import type { Post, PostStatus } from '@/types/post'
@@ -27,40 +19,18 @@ const statusStyles: Record<PostStatus, { label: string, class: string }> = {
 }
 
 const search = ref('')
-const sorting = ref<SortingState>([])
-const rowSelection = ref<RowSelectionState>({})
 
-const columnHelper = createColumnHelper<Post>()
+const filteredPosts = computed(() =>
+  posts.value.filter(post => (post.title || '').toLowerCase().includes(search.value.toLowerCase()))
+)
 
-const columns = [
-  columnHelper.accessor('title', { header: 'Title' }),
-  columnHelper.accessor('status', { header: 'Status' }),
-  columnHelper.accessor('updated_at', { header: 'Last updated' }),
+const columns: DataTableColumn<Post>[] = [
+  { id: 'title', label: 'Title', sortable: true, accessor: post => post.title || 'Untitled' },
+  { id: 'status', label: 'Status', sortable: true, accessor: post => post.status },
+  { id: 'created_at', label: 'Created', sortable: true, accessor: post => post.created_at },
+  { id: 'updated_at', label: 'Last updated', sortable: true, accessor: post => post.updated_at },
+  { id: 'actions', label: '', class: 'w-20' },
 ]
-
-const table = useVueTable({
-  get data() { return posts.value },
-  columns,
-  state: {
-    get sorting() { return sorting.value },
-    get globalFilter() { return search.value },
-    get rowSelection() { return rowSelection.value },
-  },
-  onSortingChange: (updaterOrValue) => {
-    sorting.value = typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
-  },
-  onRowSelectionChange: (updaterOrValue) => {
-    rowSelection.value = typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection.value) : updaterOrValue
-  },
-  enableRowSelection: true,
-  globalFilterFn: (row, _columnId, filterValue) =>
-    row.original.title.toLowerCase().includes(String(filterValue).toLowerCase()),
-  getCoreRowModel: getCoreRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
-})
-
-const rows = computed(() => table.getRowModel().rows)
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -138,76 +108,39 @@ function confirmDelete() {
 
       <div class="flex-1 overflow-hidden rounded-xl border border-white/[0.08] bg-surface-raised">
         <div class="h-full overflow-auto">
-          <table v-if="rows.length" class="w-full text-left text-sm">
-            <thead class="sticky top-0 bg-surface-raised">
-              <tr class="border-b border-white/[0.08]">
-                <th class="w-12 px-4 py-3">
-                  <input
-                    type="checkbox"
-                    class="rounded border-white/20 bg-transparent text-primary focus:ring-primary/40 focus:ring-offset-0"
-                    :checked="table.getIsAllRowsSelected()"
-                    @change="table.toggleAllRowsSelected(($event.target as HTMLInputElement).checked)"
-                  />
-                </th>
-                <th
-                  v-for="header in table.getFlatHeaders()"
-                  :key="header.id"
-                  class="px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white/40"
-                >
-                  <button
-                    type="button"
-                    class="flex items-center gap-1.5 cursor-pointer hover:text-white/70"
-                    @click="header.column.getToggleSortingHandler()?.($event)"
-                  >
-                    {{ header.column.columnDef.header }}
-                    <ArrowUp v-if="header.column.getIsSorted() === 'asc'" class="h-3.5 w-3.5" />
-                    <ArrowDown v-else-if="header.column.getIsSorted() === 'desc'" class="h-3.5 w-3.5" />
-                    <ChevronsUpDown v-else class="h-3.5 w-3.5 opacity-50" />
-                  </button>
-                </th>
-                <th class="w-20 px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-white/[0.06]">
-              <tr v-for="row in rows" :key="row.id" class="transition-colors hover:bg-white/[0.03]">
-                <td class="px-4 py-3.5">
-                  <input
-                    type="checkbox"
-                    class="rounded border-white/20 bg-transparent text-primary focus:ring-primary/40 focus:ring-offset-0"
-                    :checked="row.getIsSelected()"
-                    @change="row.toggleSelected(($event.target as HTMLInputElement).checked)"
-                  />
-                </td>
-                <td class="px-4 py-3.5 text-white/90">
-                  <span v-for="(part, i) in titleParts(row.original.title || 'Untitled')" :key="i" :class="part.match ? 'text-primary' : ''">{{ part.text }}</span>
-                </td>
-                <td class="px-4 py-3.5">
-                  <span
-                    class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-                    :class="statusStyles[row.original.status].class"
-                  >
-                    {{ statusStyles[row.original.status].label }}
-                  </span>
-                </td>
-                <td class="px-4 py-3.5 whitespace-nowrap text-white/70">{{ formatDate(row.original.updated_at) }}</td>
-                <td class="px-4 py-3.5">
-                  <div class="flex items-center gap-1">
-                    <Link :href="`/admin/posts/${row.original.id}/edit`" class="text-white/40 transition-colors hover:text-white cursor-pointer">
-                      <SquarePen class="h-5 w-5" />
-                    </Link>
-                    <button type="button" class="text-white/40 transition-colors hover:text-red-400 cursor-pointer" @click="requestDelete(row.original)">
-                      <Trash2 class="h-5 w-5" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <DataTable :columns="columns" :rows="filteredPosts" :row-key="post => post.id" empty-message="No posts found">
+            <template #cell-title="{ row }">
+              <span v-for="(part, i) in titleParts(row.title || 'Untitled')" :key="i" :class="part.match ? 'text-primary' : 'text-white/90'">{{ part.text }}</span>
+            </template>
 
-          <div v-else class="flex h-full flex-col items-center justify-center gap-3 text-white/40">
-            <Inbox class="h-10 w-10" />
-            <p class="text-sm">No posts found</p>
-          </div>
+            <template #cell-status="{ row }">
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+                :class="statusStyles[row.status].class"
+              >
+                {{ statusStyles[row.status].label }}
+              </span>
+            </template>
+
+            <template #cell-created_at="{ row }">
+              <span class="whitespace-nowrap text-white/70">{{ formatDate(row.created_at) }}</span>
+            </template>
+
+            <template #cell-updated_at="{ row }">
+              <span class="whitespace-nowrap text-white/70">{{ formatDate(row.updated_at) }}</span>
+            </template>
+
+            <template #cell-actions="{ row }">
+              <div class="flex items-center gap-1">
+                <Link :href="`/admin/posts/${row.id}/edit`" class="text-white/40 transition-colors hover:text-white cursor-pointer">
+                  <SquarePen class="h-5 w-5" />
+                </Link>
+                <button type="button" class="text-white/40 transition-colors hover:text-red-400 cursor-pointer" @click="requestDelete(row)">
+                  <Trash2 class="h-5 w-5" />
+                </button>
+              </div>
+            </template>
+          </DataTable>
         </div>
       </div>
     </div>

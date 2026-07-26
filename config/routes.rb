@@ -16,10 +16,18 @@ Rails.application.routes.draw do
         resources :media, only: [], controller: 'media' do
           delete 'unlink', on: :member
         end
+        resources :categories, only: [], controller: 'categories' do
+          delete 'unlink', on: :member
+        end
+        resources :tags, only: [], controller: 'tags' do
+          delete 'unlink', on: :member
+        end
       end
       resources :media, only: [:index, :show, :create, :destroy] do
         patch 'mark_as_uploaded'
       end
+      resources :categories
+      resources :tags
       get 'analytics', to: 'analytics#index'
       get 'settings', to: 'settings#index'
     end
