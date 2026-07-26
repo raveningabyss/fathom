@@ -28,6 +28,7 @@ class Admin::PostsController < Admin::BaseController
 
   def destroy
     if @post.destroy
+      flash[:notice] = 'Post deleted.'
       redirect_to admin_posts_path
     else
       render inertia: 'admin/posts/Index',

@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{
 const variantClasses = {
   primary: 'bg-primary text-white shadow-sm hover:bg-primary-hover',
   secondary: 'border border-white/[0.08] bg-surface-raised text-white/80 hover:bg-white/[0.08] hover:text-white',
-  danger: 'bg-red-500 text-white shadow-sm hover:bg-red-600',
+  danger: 'bg-red-500 text-white shadow-sm hover:bg-red-400',
 }
 
 const classes = computed(() =>

@@ -1,6 +1,8 @@
 class Medium < ApplicationRecord
   attribute :status, :string, default: 'pending'
 
+  belongs_to :user
+
   has_many :post_media, dependent: :restrict_with_error
   has_many :posts, through: :post_media
 

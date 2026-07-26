@@ -17,7 +17,7 @@ Rails.application.routes.draw do
           delete 'unlink', on: :member
         end
       end
-      resources :media, only: [:index, :create, :destroy] do
+      resources :media, only: [:index, :show, :create, :destroy] do
         patch 'mark_as_uploaded'
       end
       get 'analytics', to: 'analytics#index'

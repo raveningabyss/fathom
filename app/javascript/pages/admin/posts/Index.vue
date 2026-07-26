@@ -15,6 +15,7 @@ import AppLayout from '@/AppLayout.vue'
 import Button from '@/components/Button.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import Toast from '@/components/Toast.vue'
+import { useFlashToast } from '@/composables/useFlashToast'
 import type { Post, PostStatus } from '@/types/post'
 
 const props = defineProps<{ posts: Post[] }>()
@@ -87,7 +88,7 @@ function titleParts(title: string) {
   return parts
 }
 
-const toastMessage = ref<string | null>(null)
+const toastMessage = useFlashToast()
 const pendingDeletePost = ref<Post | null>(null)
 
 function requestDelete(post: Post) {
