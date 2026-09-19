@@ -69,4 +69,4 @@ gem "inertia_rails", "~> 3.22"
 
 gem "vite_rails", "~> 3.11"
 
-gem "aws-sdk-s3", "~> 1.228"
+gem "aws-sdk-s3", "~> 1.232"
